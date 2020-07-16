@@ -18,13 +18,7 @@ namespace GruutChatbot.Bots
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             Random rand = new Random();
-            var replyText = string.Empty;
-
-            if (rand.Next(0, 2) == 0)
-                replyText = "I am Gruut?";
-            else
-                replyText = "I am Gruut.";
-
+            var replyText = (rand.Next(0, 2) == 0) ? "I am Gruut?" : "I am Gruut.";
             await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
         }
 

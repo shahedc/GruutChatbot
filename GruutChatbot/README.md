@@ -13,6 +13,35 @@ This bot has been created using [Bot Framework](https://dev.botframework.com), i
   dotnet --version
   ```
 
+## Azure Cognitive Services setup
+
+This project leverages Text Analytics from Azure Cognitive Services, which analyzes the user's sentiment to know what tone Gruut should reply with.
+
+You will need to do the following:
+
+1. Create a text analytics resource in Azure
+2. From the new resource, go to `Keys and Endpoint` and grab a key and the endpoint URI
+3. Create a new Azure Key Vault or use an existing one
+4. Create two secrets, `AzureKeyCredential` and `CognitiveServicesEndpoint` with the values from the last step
+5. Go to **Azure Active Directory** > **App registrations** > **New registration** (accept default)
+6. Take note of the application (client ID)
+7. Still in Azure AD, go to **Certificates & secrets** > **New client secret**
+8. Take note of generated secret
+9. From your Key Vault, go to **Access policies** > **Add access policy**.
+10. Set secret permissions to **Get** and **List**, set principal to app registration you created
+
+Finally, add an `appsettings.json` in the `GruutChatbot`project with the following structure:
+
+```
+{
+	"KeyVault": {
+		"Name": "<name-before-vault.azure.net>",
+		"ClientId": "<referenced earlier>",
+		"ClientSecret": "<referenced earlier>"
+	}
+}
+```
+
 ## To try this sample
 
 - In a terminal, navigate to `GruutChatbot`

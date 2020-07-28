@@ -7,18 +7,39 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure;
+using Azure.AI.TextAnalytics;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using Microsoft.Extensions.Configuration;
 
 namespace GruutChatbot.Bots
 {
     public class EchoBot : ActivityHandler
     {
-
-        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        private readonly IConfiguration _configuration;
+        public EchoBot(IConfiguration configuration)
         {
-            Random rand = new Random();
-            var replyText = (rand.Next(0, 2) == 0) ? "I am Gruut?" : "I am Gruut.";
+            _configuration = configuration;
+        }
+        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, 
+                                                            CancellationToken cancellationToken)
+        {
+            var client = new TextAnalyticsClient(
+                            new Uri(_configuration["CognitiveServicesEndpoint"]),
+                            new AzureKeyCredential(_configuration["AzureKeyCredential"]));
+            string userInput = turnContext.Activity.Text;
+            var sentiment = client.AnalyzeSentiment(userInput).Value.Sentiment.ToString();
+
+            static string GetReplyText(string sentiment) => sentiment switch
+            {
+                "Positive" => "I am Gruut.",
+                "Negative" => "I AM GRUUUUUTTT!!",
+                "Neutral" => "I am Gruut?",
+                _ => "I. AM. GRUUUUUT"
+            };
+
+            var replyText = GetReplyText(sentiment);
             await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
         }
 

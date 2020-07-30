@@ -47,5 +47,5 @@ namespace GruutChatbot.Bots
         {
             // welcome new users
         }
-    }
+    }  
 }

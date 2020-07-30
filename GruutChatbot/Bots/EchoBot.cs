@@ -29,13 +29,13 @@ namespace GruutChatbot.Bots
                             new Uri(_configuration["CognitiveServicesEndpoint"]),
                             new AzureKeyCredential(_configuration["AzureKeyCredential"]));
             string userInput = turnContext.Activity.Text;
-            var sentiment = client.AnalyzeSentiment(userInput).Value.Sentiment.ToString();
+            var sentiment = client.AnalyzeSentiment(userInput).Value.Sentiment;
 
-            static string GetReplyText(string sentiment) => sentiment switch
+            static string GetReplyText(TextSentiment sentiment) => sentiment switch
             {
-                "Positive" => "I am Gruut.",
-                "Negative" => "I AM GRUUUUUTTT!!",
-                "Neutral" => "I am Gruut?",
+                TextSentiment.Positive => "I am Gruut.",
+                TextSentiment.Negative => "I AM GRUUUUUTTT!!",
+                TextSentiment.Neutral => "I am Gruut?",
                 _ => "I. AM. GRUUUUUT"
             };
 

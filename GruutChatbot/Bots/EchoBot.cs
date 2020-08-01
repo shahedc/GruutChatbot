@@ -7,26 +7,39 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure;
+using Azure.AI.TextAnalytics;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using Microsoft.Extensions.Configuration;
 
 namespace GruutChatbot.Bots
 {
     public class EchoBot : ActivityHandler
     {
-        static readonly Random Rand = new Random((int)DateTime.UtcNow.Ticks);
-
-        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        private readonly IConfiguration _configuration;
+        public EchoBot(IConfiguration configuration)
         {
-            var random = Rand.Next(0, 10);
-            static string GetReplyText(int random) => random switch
+            _configuration = configuration;
+        }
+        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, 
+                                                            CancellationToken cancellationToken)
+        {
+            var client = new TextAnalyticsClient(
+                            new Uri(_configuration["CognitiveServicesEndpoint"]),
+                            new AzureKeyCredential(_configuration["AzureKeyCredential"]));
+            string userInput = turnContext.Activity.Text;
+            var sentiment = client.AnalyzeSentiment(userInput).Value.Sentiment;
+
+            static string GetReplyText(TextSentiment sentiment) => sentiment switch
             {
-                0 => "I am Gruut?",
-                _ when (1..8).IsInRange(random) => "I am Gruut.",
-                _ => "I AM GRUUUUUTTT!!"
+                TextSentiment.Positive => "I am Gruut.",
+                TextSentiment.Negative => "I AM GRUUUUUTTT!!",
+                TextSentiment.Neutral => "I am Gruut?",
+                _ => "I. AM. GRUUUUUT"
             };
 
-            var replyText = GetReplyText(random);
+            var replyText = GetReplyText(sentiment);
             await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
         }
 
@@ -34,11 +47,5 @@ namespace GruutChatbot.Bots
         {
             // welcome new users
         }
-    }
-    
-    public static class RangeExtensions
-    {
-        public static bool IsInRange(this Range range, int value) =>
-            value >= range.Start.Value && value <= range.End.Value;
-    }
+    }  
 }

@@ -17,20 +17,27 @@ namespace GruutChatbot.Bots
 {
     public class EchoBot : ActivityHandler
     {
-        private readonly IConfiguration _configuration;
-        public EchoBot(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, 
-                                                            CancellationToken cancellationToken)
+        private readonly string _endpoint;
+        private readonly string _keyCredential;
+        
+        public EchoBot(IConfiguration configuration) =>
+            (_endpoint, _keyCredential) = (_configuration["CognitiveServicesEndpoint"], _configuration["AzureKeyCredential"]);
+        
+        protected override async Task OnMessageActivityAsync(
+            ITurnContext<IMessageActivity> turnContext, 
+            CancellationToken cancellationToken)
         {
             var client = new TextAnalyticsClient(
-                            new Uri(_configuration["CognitiveServicesEndpoint"]),
-                            new AzureKeyCredential(_configuration["AzureKeyCredential"]));
-            string userInput = turnContext.Activity.Text;
-            var sentiment = client.AnalyzeSentiment(userInput).Value.Sentiment;
+                new Uri(_endpoint),
+                new AzureKeyCredential(_keyCredential));
 
+            var result = await client.AnaylzeSentimentAsync(
+                turnContext.Activity.Text,
+                cancellationToken: cancellationToken);
+
+            var replyText = GetReplyText(result.Value.Sentiment);
+            await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
+            
             static string GetReplyText(TextSentiment sentiment) => sentiment switch
             {
                 TextSentiment.Positive => "I am Gruut.",
@@ -38,12 +45,12 @@ namespace GruutChatbot.Bots
                 TextSentiment.Neutral => "I am Gruut?",
                 _ => "I. AM. GRUUUUUT"
             };
-
-            var replyText = GetReplyText(sentiment);
-            await turnContext.SendActivityAsync(MessageFactory.Text(replyText, replyText), cancellationToken);
         }
 
-        protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+        protected override async Task OnMembersAddedAsync(
+            IList<ChannelAccount> membersAdded,
+            ITurnContext<IConversationUpdateActivity> turnContext,
+            CancellationToken cancellationToken)
         {
             // welcome new users
         }
